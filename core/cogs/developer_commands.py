@@ -1,3 +1,6 @@
+"""
+This module contains the developer commands for the bot.
+"""
 from discord.ext.commands import Cog, Context, hybrid_command, command
 from discord import Member
 from controller import get_user, create_user, update_user

@@ -1,3 +1,6 @@
+"""
+This module contains the economy commands for the bot.
+"""
 from discord.ext.commands import Cog, Context, hybrid_command
 from core.tools import send_bot_embed, economy_handler, retrieve_application_emoji
 from config import MAX_SLOTS

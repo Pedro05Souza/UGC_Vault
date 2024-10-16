@@ -1,3 +1,6 @@
+"""
+This module contains the function to retrieve the connection pool for the database.
+"""
 import asyncpg
 import os
 import dotenv

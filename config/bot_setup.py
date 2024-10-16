@@ -1,3 +1,6 @@
+"""
+This module contains the functions that are used to set up the bot.
+"""
 from discord import Intents
 from dotenv import load_dotenv
 from config.settings import BOT_PREFIX

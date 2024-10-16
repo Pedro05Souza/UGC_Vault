@@ -1,3 +1,6 @@
+"""
+This module contains functions for logging messages.
+"""
 from core.tools.log_setup import bot_logger
 
 def log_info(message: str) -> None:

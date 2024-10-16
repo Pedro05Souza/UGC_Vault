@@ -1,3 +1,6 @@
+"""
+This module contains the main entry point for the bot.
+"""
 from config import setup_bot, setup_token, load_cogs
 from core.tools import log_info
 

@@ -1,3 +1,6 @@
+"""
+This module contains the decorators for the core of the application.
+"""
 from config import retrieve_connection_pool, CAN_LOG, ADMIN_IDS
 from core.tools.lib import send_bot_embed
 from discord.ext.commands import check

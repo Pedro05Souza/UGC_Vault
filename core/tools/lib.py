@@ -1,7 +1,9 @@
+"""
+This module contains the tools that are used in the bot.
+"""
 from discord import Embed
 from discord import Interaction
 from discord.ext.commands import Context
-import discord
 
 __all__ = (
     'send_bot_embed',

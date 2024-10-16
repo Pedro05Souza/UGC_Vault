@@ -1,3 +1,6 @@
+"""
+This module sets up the logger for the bot.
+"""
 from colorlog import ColoredFormatter
 import logging
 
