@@ -31,7 +31,7 @@ async def create_user(id: int) -> User:
     Returns:
         bool: Whether the user was created.
     """
-    return await User.create(id=id)
+    await User.create(id=id)
 
 async def update_user(id: int, **kwargs) -> bool:
     """
