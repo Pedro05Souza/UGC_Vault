@@ -3,9 +3,8 @@ This module contains the developer commands for the bot.
 """
 from discord.ext.commands import Cog, Context, hybrid_command, command
 from discord import Member
-from controller import get_user, create_user, update_user
 from core.tools import admin_only, send_bot_embed, economy_handler, retrieve_application_emoji
-from controller import get_user, update_user, execute_transaction
+from controllers import get_user, create_user, update_user, execute_transactions
 from typing import Optional
 from discord import Member
 
@@ -59,7 +58,7 @@ class DeveloperCommands(Cog):
         user_callback = lambda: update_user(user.id, balance=user_data.balance + amount)
         author_callback = lambda: update_user(ctx.author.id, balance=author_data.balance - amount)
 
-        has_donated = await execute_transaction(user_callback, author_callback)
+        has_donated = await execute_transactions(user_callback, author_callback)
 
         if has_donated:
             candy_emoji = await retrieve_application_emoji("candy", 1295095109645373474, is_animated=True)
