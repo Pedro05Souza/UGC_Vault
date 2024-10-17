@@ -1,8 +1,7 @@
 """
 This module contains the tools that are used in the bot.
 """
-from discord import Embed
-from discord import Interaction
+from discord import Embed, File, Interaction, Member
 from discord.ext.commands import Context
 
 __all__ = (
@@ -10,7 +9,14 @@ __all__ = (
     'retrieve_application_emoji',
 )
 
-async def send_bot_embed(ctx: Context, thumbnail = None, footer_text: str = "", color="FFC5D3", ephemeral=False, **kwargs) -> None:
+async def send_bot_embed(
+        ctx: Context, 
+        thumbnail: File = None,
+        footer_text: str = "", 
+        color="FFC5D3", 
+        ephemeral=False, 
+        **kwargs
+        ) -> None:
     """
     Function that makes the application send an embed message.
 
@@ -18,6 +24,7 @@ async def send_bot_embed(ctx: Context, thumbnail = None, footer_text: str = "", 
         ctx (Context): The context of the command.
         thumbnail (str): The URL of the thumbnail.
         footer_text (str): The text that will be displayed in the footer.
+        color (str): The color of the embed.
         ephemeral (bool): Whether the message should be ephemeral or not.
         **kwargs: The keyword arguments that will be passed to the embed builder.
 
@@ -25,10 +32,11 @@ async def send_bot_embed(ctx: Context, thumbnail = None, footer_text: str = "", 
         None
     """
     embed = await embed_builder(**kwargs)
-    embed.color = int(color, 16)
-    
-    if footer_text != "":
-        embed.set_footer(text=footer_text)
+    embed.color = int(color, 16)    
+    embed.set_footer(text=footer_text)
+
+    if thumbnail is not None:
+        embed.set_thumbnail(url=thumbnail)
 
     if isinstance(ctx, Interaction):
         if not ctx.response.is_done():
