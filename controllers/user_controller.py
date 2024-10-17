@@ -1,7 +1,6 @@
 from models.user import User
 from typing import Optional
 
-
 __all__ = (
     'get_user',
     'create_user',
