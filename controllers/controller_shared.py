@@ -1,4 +1,5 @@
 from tortoise.transactions import in_transaction
+from core.tools import log_error
 
 __all__ = ['execute_transactions']
 
@@ -19,4 +20,5 @@ async def execute_transactions(*callbacks) -> bool:
             await conn.commit()
         except Exception as e:
             await conn.rollback()
+            log_error(f"An error occurred while executing transactions: {e}")
             return False
