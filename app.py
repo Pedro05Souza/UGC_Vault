@@ -1,7 +1,8 @@
 """
 This module contains the main entry point for the bot.
 """
-from config import setup_bot, setup_token, load_cogs
+from config import setup_bot, setup_token, load_cogs, init
+from tortoise import run_async
 from core.tools import log_info
 
 bot = setup_bot()
@@ -12,4 +13,5 @@ async def on_ready():
     await load_cogs(bot)
 
 if __name__ == '__main__':
-    bot.run(setup_token())
+    run_async(init())
+    bot.run(setup_token(), log_handler=None)
