@@ -1,10 +1,13 @@
 """
 This module contains the economy commands for the bot.
 """
+from math import ceil
 from discord.ext.commands import Cog, Context, hybrid_command, hybrid_group
+from discord import app_commands
 from core.tools import send_bot_embed, economy_handler
 from controllers import update_user
 from config import MAX_SLOTS
+from tools import color_autocomplete, coinflip_autocomplete
 from collections import Counter
 from random import randint, choices
 from typing import Union 
@@ -36,7 +39,7 @@ class EconomyCommands(Cog):
     @hybrid_group(fallback="bet")
     async def bet(self, ctx: Context) -> None:
         """
-        Allows users to bet on the slot machine.
+        Bet command group.
 
         Args:
             None
@@ -60,7 +63,9 @@ class EconomyCommands(Cog):
         """
         User = ctx.user_data
 
-        if not await self.bet_validator(ctx, User, bet_amount):
+        bet_amount = await self.bet_validator(ctx, User, bet_amount)
+
+        if bet_amount == -1:
             return
         
         await self.slots_handler(ctx, User, bet_amount)
@@ -85,6 +90,7 @@ class EconomyCommands(Cog):
         await send_bot_embed(ctx, title=title, footer_text=footer_description, description=description)
 
     @bet.command(name="roulette", description="Bet on the roulette table.")
+    @app_commands.autocomplete(color_picked=color_autocomplete)
     @economy_handler(user_data=True)
     async def roulette(self, ctx: Context, bet_amount, color_picked: str) -> None:
         """
@@ -96,13 +102,16 @@ class EconomyCommands(Cog):
         Returns:
             None
         """
-        if not await self.bet_validator(ctx, ctx.user_data, bet_amount):
+        bet_amount = await self.bet_validator(ctx, ctx.user_data, bet_amount)
+
+        if bet_amount == -1:
             return
 
         total_chances = 37
         bet_multiplier = 2
         random_value = randint(0, total_chances)
-        red_color = total_chances - 1 // 2
+        red_color = ceil((total_chances - 1) / 2)
+        red_color = list(range(1, red_color))
         rng_color = None
 
         user = ctx.user_data
@@ -126,8 +135,28 @@ class EconomyCommands(Cog):
 
         if await update_user(user.id, balance=user.balance):
             await send_bot_embed(ctx, description=description)
+
+    @hybrid_command(name="coinflip", aliases=["cf"], description="Bet on a coinflip.")
+    @app_commands.autocomplete(side=coinflip_autocomplete)
+    @economy_handler(user_data=True)
+    async def coinflip(self, ctx: Context, bet_amount, side: str) -> None:
+        """
+        Coinflip command for the betting system.
+
+        Args:
+            bet_amount (int): The amount to bet.
+            side (str): The side to bet on.
+        """
+        User = ctx.user_data
+        bet_amount = await self.bet_validator(ctx, User, bet_amount)
+
+        if bet_amount == -1:
+            return
+
+        if side.lower() not in ["heads", "tails"]:
+            await send_bot_embed(ctx, description="Please enter a valid side.")
         
-    async def bet_validator(self, ctx: Context, User: User, bet_amount: Union[str, int]) -> bool:
+    async def bet_validator(self, ctx: Context, User: User, bet_amount: Union[str, int]) -> int:
         """
         Validates the bet amount. Reducing
 
@@ -137,17 +166,22 @@ class EconomyCommands(Cog):
         Returns:
             bool: The validation status.
         """
-        if bet_amount in ("all", "ALL"):
-            bet_amount = User.balance
-        else:
+        if bet_amount.isdigit():
             bet_amount = int(bet_amount)
+            
+        elif bet_amount.lower() == "all":
+            bet_amount = User.balance
 
-        if User.balance < bet_amount:
+        else:
+            await send_bot_embed(ctx, description="Please enter a valid number.")
+            return -1
+        
+        if bet_amount > User.balance or bet_amount < 0:
             await send_bot_embed(ctx, description="You do not have enough money to bet.")
-            return False
-
-        return True      
-
+            return -1
+        
+        return bet_amount
+            
     async def slots_handler(self, ctx: Context, User, bet_amount) -> None:
         User.balance -= bet_amount
         fruits = await self.get_fruits()
