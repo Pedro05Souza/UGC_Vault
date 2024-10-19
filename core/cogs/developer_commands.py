@@ -13,7 +13,7 @@ class DeveloperCommands(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @hybrid_command(name="givepoints", aliases=["gp"], description="Give points to a user.")
+    @command(name="givepoints", aliases=["gp"], description="Give points to a user.")
     @admin_only()
     async def give_points(self, ctx: Context, amount: int, user: Optional[Member] = None) -> None:
         """
@@ -41,7 +41,7 @@ class DeveloperCommands(Cog):
         await update_user(user.id, balance=user_data.balance + amount)
         await send_bot_embed(ctx, title="Success", description=f":white_check_mark: You have given **{amount}** points to **{user.display_name}**.")
 
-    @hybrid_command(name="donate", aliases=["give"], description="Donate money to another user.")
+    @command(name="donate", aliases=["give"], description="Donate money to another user.")
     @economy_handler(user_data=True)
     @admin_only()
     async def donate(self, ctx: Context, user: Member, amount: int):
