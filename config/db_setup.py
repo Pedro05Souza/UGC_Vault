@@ -32,7 +32,7 @@ async def retrieve_tortoise_config() -> dict:
         },
         "apps": {
             "models": {
-                "models": ["models.user", "models.guild", "models.codes", "models.item"],
+                "models": ["models"],
                 "default_connection": "default"
             }
         }
