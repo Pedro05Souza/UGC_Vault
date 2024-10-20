@@ -1,10 +1,10 @@
 """
 This module contains the developer commands for the bot.
 """
-from discord.ext.commands import Cog, Context, hybrid_command, command
+from discord.ext.commands import Cog, Context, command
 from discord import Member
 from core.tools import admin_only, send_bot_embed, economy_handler, retrieve_application_emoji
-from controllers import get_user, create_user, update_user, execute_transactions
+from controllers import get_user, create_user, update_user, execute_transactions, create_guild, get_guild, update_guild
 from typing import Optional
 from discord import Member
 
@@ -80,6 +80,63 @@ class DeveloperCommands(Cog):
         """
         await self.bot.tree.sync()
         await ctx.send("Hybrid commands have been synced.")
+
+    @command(name="registerchannel", aliases=["rc"], description="Register a channel for the bot to listen to.")
+    @admin_only()
+    async def register_channel(self, ctx: Context) -> None:
+        """
+        Registers a channel for the bot to listen to.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        guild_config = await get_guild(ctx.guild.id)
+
+        if not guild_config:
+            guild_config = await create_guild(ctx.guild.id)
+            return await send_bot_embed(ctx, description=":no_entry_sign: This guild is not registered. Try again.")
+        
+        if guild_config.allowed_channels is None:
+            await update_guild(ctx.guild.id, allowed_channels=[ctx.channel.id])
+            return await send_bot_embed(ctx, description=":white_check_mark: This channel has been registered.")
+
+        if ctx.channel.id in guild_config.allowed_channels:
+            return await send_bot_embed(ctx, description=":no_entry_sign: This channel is already registered.")
+        
+        await update_guild(ctx.guild.id, allowed_channels=guild_config.allowed_channels + [ctx.channel.id])
+        await send_bot_embed(ctx, description=":white_check_mark: This channel has been registered.", footer_text="This channel is now wishlisted for the bot to use.")
+
+
+    @command(name="unregisterchannel", aliases=["urc"], description="Unregister a channel for the bot to listen to.")
+    @admin_only()
+    async def unregister_channel(self, ctx: Context) -> None:
+        """
+        Unregisters a channel for the bot to listen to.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        guild_config = await get_guild(ctx.guild.id)
+
+        if not guild_config:
+            return await send_bot_embed(ctx, description=":no_entry_sign: This guild is not registered. Try again.")
+        
+        if guild_config.allowed_channels is None:
+            return await send_bot_embed(ctx, description=":no_entry_sign: This channel is not registered.")
+        
+        if ctx.channel.id not in guild_config.allowed_channels:
+            return await send_bot_embed(ctx, description=":no_entry_sign: This channel is not registered.")
+        
+        guild_config.allowed_channels.remove(ctx.channel.id)
+        
+        await update_guild(ctx.guild.id, allowed_channels=guild_config.allowed_channels)
+        await send_bot_embed(ctx, description=":white_check_mark: This channel has been unregistered.", footer_text="This channel is no longer wishlisted for the bot to use.")
 
 async def setup(bot):
     await bot.add_cog(DeveloperCommands(bot))
