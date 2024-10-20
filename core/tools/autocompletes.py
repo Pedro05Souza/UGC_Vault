@@ -7,7 +7,7 @@ __all__ = [
 
 
 async def color_autocomplete(
-        self, interaction: Interaction, current_choice: str
+        interaction: Interaction, current_choice: str
     ) -> list[app_commands.Choice]:
     colors = ["Red", "Black", "Green"]
     return [
@@ -16,7 +16,7 @@ async def color_autocomplete(
     ]
 
 async def coinflip_autocomplete(
-        self, interaction: Interaction, current_choice: str
+        interaction: Interaction, current_choice: str
     ) -> list[app_commands.Choice]:
     sides = ["Heads", "Tails"]
     return [

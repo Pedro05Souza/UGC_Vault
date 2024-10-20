@@ -2,23 +2,18 @@
 This module contains the economy commands for the bot.
 """
 from math import ceil
-from discord.ext.commands import Cog, Context, hybrid_command, hybrid_group
-from discord import app_commands
+from discord.ext.commands import Cog, Context, hybrid_command
 from core.tools import send_bot_embed, economy_handler
-from controllers import update_user
-from config import MAX_SLOTS
-from tools import color_autocomplete, coinflip_autocomplete
-from collections import Counter
-from random import randint, choices
-from typing import Union 
-from models import User
+from controllers import get_command_timestamp, create_command_timestamp, update_command_timestamp, update_user
+from random import randint
+from datetime import datetime, timezone
 
 class EconomyCommands(Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @hybrid_command(name="balance", aliases=["bal"], description="Check your balance.")
-    @economy_handler(user_data=True)
+    @economy_handler()
     async def balance(self, ctx: Context) -> None:
         """
         Allows users to check their balance.
@@ -36,10 +31,11 @@ class EconomyCommands(Cog):
             description=f"💼 Wallet: **{User.balance}**"
             )
         
-    @hybrid_group(fallback="bet")
-    async def bet(self, ctx: Context) -> None:
+    @hybrid_command(name="booster", description="Claim your daily booster reward.")
+    @economy_handler(booster_command=True)
+    async def booster(self, ctx: Context) -> None:
         """
-        Bet command group.
+        Allows users to claim their daily booster reward.
 
         Args:
             None
@@ -47,213 +43,29 @@ class EconomyCommands(Cog):
         Returns:
             None
         """
-        pass
-        
-    @bet.command(name="slots", description="Bet on the slot machine.")
-    @economy_handler(user_data=True)
-    async def slots(self, ctx: Context, bet_amount) -> None:
-        """
-        Test command.
+        initial_range = 500
+        final_range = 5000
 
-        Args:
-            None
-
-        Returns:
-            None
-        """
         User = ctx.user_data
-
-        bet_amount = await self.bet_validator(ctx, User, bet_amount)
-
-        if bet_amount == -1:
-            return
+        member = ctx.author
         
-        await self.slots_handler(ctx, User, bet_amount)
-             
-    @bet.command(name="jackpots", description="Check the jackpot values.")
-    async def jackpots(self, ctx: Context) -> None:
-        """
-        Allows users to check the jackpot values.
+        timestamp = await get_command_timestamp(member.id, "booster")
 
-        Args:
-            None
+        if not timestamp:
+            await create_command_timestamp(member.id, "booster")
+            timestamp = await get_command_timestamp(member.id, "booster")
 
-        Returns:
-            None
-        """
-        jackpots = await self.get_jackpots()
-        title = "🎰 Jackpots 🎰"
-        description = "``"
-        description += "\n".join([f"{emoji} = {value} 💸" for emoji, value in jackpots.items()])
-        description += "``"
-        footer_description = "All combinations that can be won in the slot machine, followed by how many times the bet amount you will win."
-        await send_bot_embed(ctx, title=title, footer_text=footer_description, description=description)
+        time_difference = (datetime.now(timezone.utc) - timestamp).seconds
+        time_remaining = 1800 - time_difference
 
-    @bet.command(name="roulette", description="Bet on the roulette table.")
-    @app_commands.autocomplete(color_picked=color_autocomplete)
-    @economy_handler(user_data=True)
-    async def roulette(self, ctx: Context, bet_amount, color_picked: str) -> None:
-        """
-        Roulette command for the betting system.
+        if timestamp and time_remaining > 0:
+            return await send_bot_embed(ctx, description=f":no_entry_sign: You have already claimed your daily booster reward, please wait **{ceil((time_remaining) / 60)}** minutes.")
+                
+        points_rewarded = randint(initial_range, final_range)
+        await update_user(member.id, balance=User.balance + points_rewarded)
+        await update_command_timestamp(member.id, "booster")
+        await send_bot_embed(ctx, description=f"💰 You have claimed your daily booster reward of **{points_rewarded}**.")
 
-        Args:
-            None
-
-        Returns:
-            None
-        """
-        bet_amount = await self.bet_validator(ctx, ctx.user_data, bet_amount)
-
-        if bet_amount == -1:
-            return
-
-        total_chances = 37
-        bet_multiplier = 2
-        random_value = randint(0, total_chances)
-        red_color = ceil((total_chances - 1) / 2)
-        red_color = list(range(1, red_color))
-        rng_color = None
-
-        user = ctx.user_data
-
-        if random_value == 0:
-            rng_color = "Green"
-            bet_multiplier = 14
-
-        elif random_value in red_color:
-            rng_color = "Red"
-
-        else:
-            rng_color = "Black"
-
-        if color_picked.lower() == rng_color.lower():
-            user.balance += bet_amount * bet_multiplier
-            description = f"🎉 **{ctx.author.display_name}** has won **{bet_amount * bet_multiplier}**."
-        else:
-            user.balance -= bet_amount
-            description = f"😢 **{ctx.author.display_name}** has lost **{bet_amount}** The color picked was **{rng_color}**"
-
-        if await update_user(user.id, balance=user.balance):
-            await send_bot_embed(ctx, description=description)
-
-    @hybrid_command(name="coinflip", aliases=["cf"], description="Bet on a coinflip.")
-    @app_commands.autocomplete(side=coinflip_autocomplete)
-    @economy_handler(user_data=True)
-    async def coinflip(self, ctx: Context, bet_amount, side: str) -> None:
-        """
-        Coinflip command for the betting system.
-
-        Args:
-            bet_amount (int): The amount to bet.
-            side (str): The side to bet on.
-        """
-        User = ctx.user_data
-        bet_amount = await self.bet_validator(ctx, User, bet_amount)
-
-        if bet_amount == -1:
-            return
-
-        if side.lower() not in ["heads", "tails"]:
-            await send_bot_embed(ctx, description="Please enter a valid side.")
-        
-    async def bet_validator(self, ctx: Context, User: User, bet_amount: Union[str, int]) -> int:
-        """
-        Validates the bet amount. Reducing
-
-        Args:
-            bet_amount (Union[str, int]): The bet amount.
-
-        Returns:
-            bool: The validation status.
-        """
-        if bet_amount.isdigit():
-            bet_amount = int(bet_amount)
-            
-        elif bet_amount.lower() == "all":
-            bet_amount = User.balance
-
-        else:
-            await send_bot_embed(ctx, description="Please enter a valid number.")
-            return -1
-        
-        if bet_amount > User.balance or bet_amount < 0:
-            await send_bot_embed(ctx, description="You do not have enough money to bet.")
-            return -1
-        
-        return bet_amount
-            
-    async def slots_handler(self, ctx: Context, User, bet_amount) -> None:
-        User.balance -= bet_amount
-        fruits = await self.get_fruits()
-        random_fruits = choices(fruits, k=MAX_SLOTS)
-
-        title = "🎰 Slot Machine 🎰"
-        row1 = "| {} | {} | {} |".format(*choices(fruits, k=3))
-        row2 = "| {} | {} | {} | <".format(*random_fruits)
-        row3 = "| {} | {} | {} |".format(*choices(fruits, k=3))
-        description = "```\n{}\n{}\n{}\n```".format(row1, row2, row3)
-
-        fruits_freq = Counter(random_fruits)
-        possible_jackpots = await self.get_jackpots()
-
-        if len(fruits_freq) == 1:
-            jackpot = possible_jackpots[random_fruits[0]]
-            User.balance += jackpot * bet_amount
-            description += f"\n🎉 **{ctx.author.display_name}** hit the jackpot! They won **{jackpot * bet_amount}**."
-
-        elif len(fruits_freq) == 2:
-            fruit = fruits_freq.most_common(1)[0][0]
-            fruit = fruit * 2
-            jackpot = possible_jackpots[fruit]
-            User.balance += jackpot * bet_amount
-            description += f"\n💰 **{ctx.author.display_name}** has won **{jackpot * bet_amount}**."
-
-        else:
-            description += f"\n😢 **{ctx.author.display_name}** has lost **{bet_amount}**."
-
-        if await update_user(User.id, balance=User.balance):
-            await send_bot_embed(ctx, title=title, description=description)
-        
-    async def get_jackpots(self) -> dict:
-        """
-        Returns the jackpot values for the casino.
-
-        Args:
-            None
-
-        Returns:
-            dict: The jackpot values.
-        """
-        return {
-            "🍇🍇🍇": 12,
-            "🍋🍋🍋": 9,
-            "🍒🍒🍒": 7,
-            "🍊🍊🍊": 5,
-            "🍉🍉🍉": 3,
-            "🍇🍇": 2,
-            "🍋🍋": 1.75,
-            "🍒🍒": 1.5,
-            "🍊🍊": 1.5,
-            "🍉🍉": 1.25,
-        }
-    
-    async def get_fruits(self) -> list:
-        """
-        Returns the fruits for the casino.
-
-        Args:
-            None
-
-        Returns:
-            list: The fruits.
-        """
-        return [
-            "🍇",
-            "🍋",
-            "🍒",
-            "🍊",
-            "🍉"
-        ]
                     
 async def setup(bot):
     await bot.add_cog(EconomyCommands(bot))
