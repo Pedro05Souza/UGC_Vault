@@ -7,6 +7,7 @@ from discord.ext.commands import Context
 __all__ = (
     'send_bot_embed',
     'retrieve_application_emoji',
+    'send_user_dm',
 )
 
 async def send_bot_embed(
@@ -62,3 +63,6 @@ async def retrieve_application_emoji(emoji_name: str, emoji_id, is_animated=Fals
 
 async def embed_builder(**kwargs):
     return Embed(**kwargs)
+
+async def send_user_dm(author: Member, **kwargs):
+    return await author.send(embed=await embed_builder(**kwargs))
