@@ -4,6 +4,5 @@ from tortoise import fields
 __all__ = ['Item']
 
 class Item(Model):
-    id = fields.UUIDField(primary_key=True)
-    name = fields.CharField(max_length=255)
-    image = fields.CharField(max_length=255)
+    id = fields.BigIntField(pk=True)
+    serial_number = fields.CharField(max_length=255, null=True)

@@ -9,6 +9,10 @@ from collections import Counter
 from typing import Union
 from config import MAX_SLOTS, MAX_COINFLIP
 
+__all__ = (
+    'BetCommands',
+)
+
 class BetCommands(Cog):
     
     def __init__(self, bot):
@@ -188,7 +192,9 @@ class BetCommands(Cog):
         possible_jackpots = await self.get_jackpots()
 
         if len(fruits_freq) == 1:
-            jackpot = possible_jackpots[random_fruits[0]]
+            fruit = fruits_freq.most_common(1)[0][0]
+            fruit = fruit * 3
+            jackpot = possible_jackpots[fruit]
             User.balance += jackpot * bet_amount
             description += f"\n🎉 **{ctx.author.display_name}** hit the jackpot! They won **{jackpot * bet_amount}**."
 
@@ -196,8 +202,8 @@ class BetCommands(Cog):
             fruit = fruits_freq.most_common(1)[0][0]
             fruit = fruit * 2
             jackpot = possible_jackpots[fruit]
-            User.balance += jackpot * bet_amount
-            description += f"\n💰 **{ctx.author.display_name}** has won **{jackpot * bet_amount}**."
+            User.balance += int(jackpot * bet_amount)
+            description += f"\n💰 **{ctx.author.display_name}** has won **{int(jackpot * bet_amount)}**."
 
         else:
             description += f"\n😢 **{ctx.author.display_name}** has lost **{bet_amount}**."
@@ -221,11 +227,11 @@ class BetCommands(Cog):
             "🍒🍒🍒": 7,
             "🍊🍊🍊": 5,
             "🍉🍉🍉": 3,
-            "🍇🍇": 2,
-            "🍋🍋": 1.75,
-            "🍒🍒": 1.5,
-            "🍊🍊": 1.5,
-            "🍉🍉": 1.25,
+            "🍇🍇": 1.5,
+            "🍋🍋": 1.4,
+            "🍒🍒": 1.3,
+            "🍊🍊": 1.2,
+            "🍉🍉": 1.1,
         }
     
     async def get_fruits(self) -> list:

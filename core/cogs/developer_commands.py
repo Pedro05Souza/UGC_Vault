@@ -4,9 +4,14 @@ This module contains the developer commands for the bot.
 from discord.ext.commands import Cog, Context, command
 from discord import Member
 from core.tools import admin_only, send_bot_embed, economy_handler, retrieve_application_emoji
+from core.routes import get_item_by_id, get_item_image_by_id
 from controllers import get_user, create_user, update_user, execute_transactions, create_guild, get_guild, update_guild
 from typing import Optional
 from discord import Member
+
+__all__ = (
+    'DeveloperCommands',
+)
 
 class DeveloperCommands(Cog):
 
@@ -109,7 +114,6 @@ class DeveloperCommands(Cog):
         await update_guild(ctx.guild.id, allowed_channels=guild_config.allowed_channels + [ctx.channel.id])
         await send_bot_embed(ctx, description=":white_check_mark: This channel has been registered.", footer_text="This channel is now wishlisted for the bot to use.")
 
-
     @command(name="unregisterchannel", aliases=["urc"], description="Unregister a channel for the bot to listen to.")
     @admin_only()
     async def unregister_channel(self, ctx: Context) -> None:
@@ -137,6 +141,42 @@ class DeveloperCommands(Cog):
         
         await update_guild(ctx.guild.id, allowed_channels=guild_config.allowed_channels)
         await send_bot_embed(ctx, description=":white_check_mark: This channel has been unregistered.", footer_text="This channel is no longer wishlisted for the bot to use.")
+
+    @command(name="registeritem", aliases=["ri"], description="Register an item in the bot's database.")
+    async def register_item(self, ctx: Context, item_id: int):
+        item_info = await get_item_by_id(item_id)
+
+        if 'errors' in item_info:
+            await self.parse_error_message(ctx, item_info)
+            return
+        
+        item_image = await get_item_image_by_id(item_id)
+
+        item_image = item_image['data'][0]
+        item_image = item_image['imageUrl']
+        item_name = item_info['Name']
+        item_description = item_info['Description']
+        item_price = item_info['PriceInRobux']
+
+        
+        description = (
+            f"🏷️ **Item name** {item_name}\n"
+            f"📜 **Item description** {item_description}\n"
+            f"💰 **Price** {item_price} robux"
+        )
+
+        await send_bot_embed(ctx, title="💻 Item Information", description=description, thumbnail=item_image)
+
+    async def parse_error_message(self, ctx: Context, item_info: dict):
+        code = item_info['errors'][0]
+        code = code['code']
+
+        if code == 0:
+            return await send_bot_embed(ctx, description=":no_entry_sign: Slow down!")
+        elif code == 20:
+            return await send_bot_embed(ctx, description=":no_entry_sign: The item ID you provided is invalid.")
+        else:
+            return await send_bot_embed(ctx, description=":no_entry_sign: An unknown error occurred while registering the item.")
 
 async def setup(bot):
     await bot.add_cog(DeveloperCommands(bot))

@@ -45,7 +45,7 @@ async def send_bot_embed(
         return await ctx.followup.send(embed=embed, ephemeral=ephemeral)
     return await ctx.send(embed=embed)
 
-async def retrieve_application_emoji(emoji_name: str, emoji_id, is_animated=False) -> str:
+async def retrieve_application_emoji(emoji_name: str, emoji_id: int, is_animated=False) -> str:
     """
     Function that retrieves an emoji from the bot's application.
 
@@ -64,5 +64,18 @@ async def retrieve_application_emoji(emoji_name: str, emoji_id, is_animated=Fals
 async def embed_builder(**kwargs):
     return Embed(**kwargs)
 
-async def send_user_dm(author: Member, **kwargs):
-    return await author.send(embed=await embed_builder(**kwargs))
+async def send_user_dm(author: Member, color="FFC5D3", **kwargs):
+    """
+    Function that sends a DM to a user.
+
+    Args:
+        author (Member): The author of the message.
+        color (str): The color of the embed.
+        **kwargs: The keyword arguments that will be passed to the embed builder.
+
+    Returns:
+        None
+    """
+    embed = await embed_builder(**kwargs)
+    embed.color = int(color, 16)
+    return await author.send(embed=embed)

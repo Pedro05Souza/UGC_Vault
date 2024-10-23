@@ -105,4 +105,6 @@ async def update_command_timestamp(user_id: int, command_name: str) -> bool:
     Returns:
         bool: Whether the command timestamp was updated.
     """
+    if command_name not in {'booster', 'candydrop', 'candy', 'candydrop', 'candyhunt'}:
+        raise ValueError(f"Command name '{command_name}' is not valid.")
     return await CommandsTimestamp.filter(user_id=user_id, command_name=command_name).update(timestamp=datetime.now())
