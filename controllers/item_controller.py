@@ -4,7 +4,9 @@ __all__ = (
     'get_item_by_roblox_id',
     'create_item',
     'delete_item',
-    'add_item_code'
+    'add_item_code',
+    'get_code_count',
+    'update_item_price'
 )
 
 async def get_item_by_roblox_id(item_id: int):
@@ -64,4 +66,30 @@ async def add_item_code(item_id: int, codes: list[str]):
     if item:
         code_objects = [Codes(item=item, code=code) for code in codes]
         await Codes.bulk_create(code_objects)
+    return
+
+async def get_code_count(item_id: int) -> int:
+    """
+    Function that counts the number of active codes in a specific item.
+
+    Args:
+        item_id (int): The ID of the item.
+
+    Returns:
+        int: The number of active codes.
+    """
+    return await Codes.filter(item_id=item_id).count()
+
+async def update_item_price(item_id: int, new_price: int):
+    """
+    Function that updates the price of an item.
+
+    Args:
+        item_id (int): The ID of the item.
+        new_price (int): The new price of the item.
+
+    Returns:
+        None
+    """
+    await Item.filter(item_id=item_id).update(item_price=new_price)
     return
