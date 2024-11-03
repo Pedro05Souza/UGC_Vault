@@ -2,10 +2,24 @@
 This module contains the developer commands for the bot.
 """
 from discord.ext.commands import Cog, Context, command
-from discord import Member
-from core.tools import admin_only, send_bot_embed, economy_handler, retrieve_application_emoji
+from discord import Member, ButtonStyle, Interaction
+from core.tools import admin_only, send_bot_embed, economy_handler, retrieve_application_emoji, embed_builder, confirmation_popup, view_button_builder
 from core.routes import get_item_by_id, get_item_image_by_id
-from controllers import get_user, create_user, update_user, execute_transactions, create_guild, get_guild, update_guild
+from discord.ui import Button
+from core.views import AddCodes, ChangePrice
+from controllers import (
+    get_user, 
+    create_user, 
+    update_user, 
+    execute_transactions, 
+    create_guild, 
+    get_guild, 
+    update_guild, 
+    get_item_by_roblox_id,
+    create_item,
+    delete_item,
+    get_code_count,
+    )
 from typing import Optional
 from discord import Member
 
@@ -106,7 +120,7 @@ class DeveloperCommands(Cog):
         
         if guild_config.allowed_channels is None:
             await update_guild(ctx.guild.id, allowed_channels=[ctx.channel.id])
-            return await send_bot_embed(ctx, description=":white_check_mark: This channel has been registered.")
+            return await send_bot_embed(ctx, description=":white_check_mark: This channel has been registered.", footer_text="This channel is now wishlisted for the bot to use.")
 
         if ctx.channel.id in guild_config.allowed_channels:
             return await send_bot_embed(ctx, description=":no_entry_sign: This channel is already registered.")
@@ -143,7 +157,11 @@ class DeveloperCommands(Cog):
         await send_bot_embed(ctx, description=":white_check_mark: This channel has been unregistered.", footer_text="This channel is no longer wishlisted for the bot to use.")
 
     @command(name="registeritem", aliases=["ri"], description="Register an item in the bot's database.")
-    async def register_item(self, ctx: Context, item_id: int):
+    @admin_only()
+    async def register_item(self, ctx: Context, item_id: int, item_price: int) -> None:
+        if await get_item_by_roblox_id(item_id):
+            return await send_bot_embed(ctx, description=":no_entry_sign: This item is already registered.")
+        
         item_info = await get_item_by_id(item_id)
 
         if 'errors' in item_info:
@@ -156,16 +174,22 @@ class DeveloperCommands(Cog):
         item_image = item_image['imageUrl']
         item_name = item_info['Name']
         item_description = item_info['Description']
-        item_price = item_info['PriceInRobux']
-
+        item_price_robux = item_info['PriceInRobux']
         
         description = (
-            f"🏷️ **Item name** {item_name}\n"
-            f"📜 **Item description** {item_description}\n"
-            f"💰 **Price** {item_price} robux"
+            f"🏷️ **Item Name** {item_name}\n"
+            f"📜 **Item Description** {item_description}\n"
+            f"💰 **Price in Robux** {item_price_robux} robux"
         )
 
-        await send_bot_embed(ctx, title="💻 Item Information", description=description, thumbnail=item_image)
+        embed = await embed_builder(embed_color="FFC5D3", description=description, thumbnail=item_image, title="💻 Item Information")
+        has_confirmed = await confirmation_popup(ctx, embed=embed)
+
+        if not has_confirmed:
+            return await send_bot_embed(ctx, description=":no_entry_sign: The registration process has been cancelled.")
+        
+        await send_bot_embed(ctx, description=f":white_check_mark: The item has been successfully registered costing **{item_price}** candies.")
+        await create_item(item_id, item_name, item_description, item_price)
 
     async def parse_error_message(self, ctx: Context, item_info: dict):
         code = item_info['errors'][0]
@@ -177,6 +201,128 @@ class DeveloperCommands(Cog):
             return await send_bot_embed(ctx, description=":no_entry_sign: The item ID you provided is invalid.")
         else:
             return await send_bot_embed(ctx, description=":no_entry_sign: An unknown error occurred while registering the item.")
+        
+    @command(name="displayitem", aliases=["display"], description="Display an item.")
+    @admin_only()
+    async def display_item(self, ctx: Context, item_id: int):
+        """
+        Displays an item in the chat.
 
+        Args:
+            item_id (int): The ID of the item.
+
+        Returns:
+            None
+        """
+        item = await get_item_by_roblox_id(item_id)
+        item_image = await get_item_image_by_id(item_id)
+
+        if not item:
+            return await send_bot_embed(ctx, description=":no_entry_sign: This item is not registered.")
+        
+        item_name = item['item_name']
+        item_description = item['item_description']
+        item_price = item['item_price']
+        active_codes = await get_code_count(item_id)
+        item_image = item_image['data'][0]
+        item_image = item_image['imageUrl']
+
+        description = (
+            f"🏷️ **Item name** {item_name}\n"
+            f"📜 **Item description** {item_description}\n"
+            f"💰 **Price** {item_price} candies\n"
+            f"🔑 **Active codes** {active_codes}"
+        )
+
+        embed = await embed_builder(embed_color="FFC5D3", description=description, thumbnail=item_image, title="💻 Item Information", footer_text="Click any button to update the item.")
+        buttons = await self.edit_buttons()
+        view = await view_button_builder(*buttons)
+        await ctx.send(embed=embed, view=view)
+
+        try:
+            interaction = await self.bot.wait_for("interaction", check=lambda i: i.user == ctx.author, timeout=60)
+            await self.button_handler(interaction, interaction.data, item_id)
+        except TimeoutError:
+            await ctx.send("The item display cooldown has expired.")
+
+    async def button_handler(self, interaction: Interaction, interaction_data: dict, item_id: int) -> None:
+        """
+        Handles the button interaction.
+
+        Args:
+            interaction_data (dict): The interaction data.
+
+        Returns:
+            None
+        """
+        interaction_id = interaction_data['custom_id']
+
+        if interaction_id == "add_code":
+            return await self.add_code(interaction, item_id)
+        elif interaction_id == "change_price":
+            return await self.change_price(interaction, item_id)
+        elif interaction_id == "delete_item":
+            return await self.delete_item(interaction, item_id)
+
+    async def edit_buttons(self) -> tuple:
+        """
+        Edits the buttons of the item.
+
+        Args:
+            None
+
+        Returns:
+            Button: The button.
+        """
+        add_code = Button(style=ButtonStyle.green, label="Add code", emoji="➕", custom_id="add_code")
+        change_price = Button(style=ButtonStyle.blurple, label="Change price", emoji="💰", custom_id='change_price')
+        delete_item = Button(style=ButtonStyle.red, label="Delete item", emoji="🗑️", custom_id="delete_item")
+        return add_code, change_price, delete_item
+    
+    async def delete_item(self, interaction: Interaction, item_id: int) -> None:
+        """
+        Deletes an item.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        embed = await embed_builder(embed_color="FFC5D3", description="Are you sure you want to delete this item?", title="💻 Delete Item")
+        confirmation = await confirmation_popup(interaction, embed=embed, ephemeral=True)
+
+        if not confirmation:
+            return await interaction.followup.send("❌ The deletion process has been cancelled.", ephemeral=True)
+        
+        await delete_item(item_id)
+        await send_bot_embed(interaction, description="✅ The item has been successfully deleted.", ephemeral=True)
+
+    async def add_code(self, interaction: Interaction, item_id: int) -> None:
+        """
+        Adds a code to the item.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        addCodes = AddCodes(item_id)
+        await interaction.response.send_modal(addCodes)
+
+    async def change_price(self, interaction: Interaction, item_id: int) -> None:
+        """
+        Changes the price of the item.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        changePrice = ChangePrice(item_id)
+        await interaction.response.send_modal(changePrice)
+        
 async def setup(bot):
     await bot.add_cog(DeveloperCommands(bot))
