@@ -17,7 +17,6 @@ async def execute_transactions(*callbacks) -> bool:
         try:
             for callback in callbacks:
                 await callback()
-            await conn.commit()
         except Exception as e:
             await conn.rollback()
             log_error(f"An error occurred while executing transactions: {e}")
