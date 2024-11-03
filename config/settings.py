@@ -5,7 +5,7 @@ This module contains the settings for the application.
 
 BOT_PREFIX = "$" # The prefix for the bot commands
 CAN_LOG = True # Sets whether the bot can log messages or not
-ADMIN_IDS = {668666843900149791} # The IDs of the bot administrators (separator: ,)
+ADMIN_IDS = {668666843900149791, 361197580815958026} # The IDs of the bot administrators (separator: ,)
 
 
 # Command settings
