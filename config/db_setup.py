@@ -1,4 +1,5 @@
 from tortoise import Tortoise
+import asyncpg
 from dotenv import load_dotenv
 from core.tools import log_info
 import os
@@ -28,7 +29,7 @@ async def retrieve_tortoise_config() -> dict:
 
     config = {
         "connections": {
-            "default": f"postgres://{user}:{password}@localhost:5432/UgcBot"
+            "default": f"postgres://{user}:{password}@db:5432/UgcBot"
         },
         "apps": {
             "models": {
