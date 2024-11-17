@@ -3,3 +3,4 @@ python-dotenv
 colorlog
 tortoise-orm
 aiohttp
+asyncpg
