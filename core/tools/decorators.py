@@ -13,7 +13,7 @@ __all__ = (
     'admin_only',
 )
 
-def economy_handler(user_data=True, guild_data=True, booster_command = False):
+def economy_handler(user_data=True, guild_data=True, booster_command=False):
     """
     Decorator that handles the economy data.
 
