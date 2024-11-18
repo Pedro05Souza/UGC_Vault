@@ -3,8 +3,9 @@ This module contains the developer commands for the bot.
 """
 from discord.ext.commands import Cog, Context, command
 from discord import Member, ButtonStyle, Interaction
-from core.tools import admin_only, send_bot_embed, economy_handler, retrieve_application_emoji, embed_builder, confirmation_popup, view_button_builder
+from core.tools import admin_only, send_bot_embed, economy_handler, retrieve_application_emoji, embed_builder, confirmation_popup, view_button_builder, log_info
 from core.routes import get_item_by_id, get_item_image_by_id
+from collections import defaultdict
 from discord.ui import Button
 from core.views import AddCodes, ChangePrice
 from controllers import (
@@ -168,6 +169,12 @@ class DeveloperCommands(Cog):
             await self.parse_error_message(ctx, item_info)
             return
         
+        item_creator_type = item_info['Creator']['CreatorType']
+        item_creator_id = item_info['Creator']['Id']
+
+        if not item_creator_type == 'Group' or item_creator_id != 6471663:
+            return await send_bot_embed(ctx, description=":no_entry_sign: This item is not created by the UGC group.")
+        
         item_image = await get_item_image_by_id(item_id)
 
         item_image = item_image['data'][0]
@@ -175,6 +182,7 @@ class DeveloperCommands(Cog):
         item_name = item_info['Name']
         item_description = item_info['Description']
         item_price_robux = item_info['PriceInRobux']
+        item_category = item_info['AssetTypeId']
         
         description = (
             f"🏷️ **Item Name** {item_name}\n"
@@ -189,7 +197,7 @@ class DeveloperCommands(Cog):
             return await send_bot_embed(ctx, description=":no_entry_sign: The registration process has been cancelled.")
         
         await send_bot_embed(ctx, description=f":white_check_mark: The item has been successfully registered costing **{item_price}** candies.")
-        await create_item(item_id, item_name, item_description, item_price)
+        await create_item(item_id, item_name, item_description, item_price, item_category)
 
     async def parse_error_message(self, ctx: Context, item_info: dict):
         code = item_info['errors'][0]
@@ -226,12 +234,14 @@ class DeveloperCommands(Cog):
         active_codes = await get_code_count(item_id)
         item_image = item_image['data'][0]
         item_image = item_image['imageUrl']
+        item_category = await self.asset_type_id(item['item_category'])
 
         description = (
             f"🏷️ **Item name** {item_name}\n"
             f"📜 **Item description** {item_description}\n"
             f"💰 **Price** {item_price} candies\n"
-            f"🔑 **Active codes** {active_codes}"
+            f"🔑 **Active codes** {active_codes}\n"
+            f"📦 **Category** {item_category}"
         )
 
         embed = await embed_builder(embed_color="FFC5D3", description=description, thumbnail=item_image, title="💻 Item Information", footer_text="Click any button to update the item.")
@@ -323,6 +333,25 @@ class DeveloperCommands(Cog):
         """
         changePrice = ChangePrice(item_id)
         await interaction.response.send_modal(changePrice)
+
+    async def asset_type_id(self, asset_id: int) -> dict:
+        """
+        Retrieves the asset type ID.
+
+        Args:
+            None
+
+        Returns:
+            dict: The asset type ID.
+        """
+        d = defaultdict(lambda: "Other")
+        d.update({
+            8: "Hat",
+            17: "Head",
+            18: "Face",
+        })
+
+        return d[asset_id]
         
 async def setup(bot):
     await bot.add_cog(DeveloperCommands(bot))
