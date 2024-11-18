@@ -8,3 +8,4 @@ class Item(Model):
     item_name = fields.CharField(max_length=255)
     item_description = fields.TextField()
     item_price = fields.IntField()
+    item_category = fields.CharField(max_length=255)

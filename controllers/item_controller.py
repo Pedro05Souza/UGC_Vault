@@ -21,7 +21,7 @@ async def get_item_by_roblox_id(item_id: int):
     """
     return await Item.filter(item_id=item_id).first().values()
 
-async def create_item(item_id: int, item_name: str, item_description: str, item_price: int):
+async def create_item(item_id: int, item_name: str, item_description: str, item_price: int, item_category: str):
     """
     Function that creates an item to the database.
 
@@ -34,7 +34,7 @@ async def create_item(item_id: int, item_name: str, item_description: str, item_
     Returns:
         None
     """
-    await Item.create(item_id=item_id, item_name=item_name, item_description=item_description, item_price=item_price)
+    await Item.create(item_id=item_id, item_name=item_name, item_description=item_description, item_price=item_price, item_category=item_category)
     return
 
 async def delete_item(item_id: int):
