@@ -170,7 +170,7 @@ class DeveloperCommands(Cog):
             return
         
         item_creator_type = item_info['Creator']['CreatorType']
-        item_creator_id = item_info['Creator']['Id']
+        item_creator_id = item_info['Creator']['CreatorTargetId']
 
         if not item_creator_type == 'Group' or item_creator_id != 6471663:
             return await send_bot_embed(ctx, description=":no_entry_sign: This item is not created by the UGC group.")
@@ -182,12 +182,13 @@ class DeveloperCommands(Cog):
         item_name = item_info['Name']
         item_description = item_info['Description']
         item_price_robux = item_info['PriceInRobux']
-        item_category = item_info['AssetTypeId']
+        item_category = await self.asset_type_id(item_info['AssetTypeId'])
         
         description = (
             f"🏷️ **Item Name** {item_name}\n"
             f"📜 **Item Description** {item_description}\n"
-            f"💰 **Price in Robux** {item_price_robux} robux"
+            f"💰 **Price in Robux** {item_price_robux} robux\n"
+            f"📦 **Category** {item_category}"
         )
 
         embed = await embed_builder(embed_color="FFC5D3", description=description, thumbnail=item_image, title="💻 Item Information")
@@ -349,6 +350,8 @@ class DeveloperCommands(Cog):
             8: "Hat",
             17: "Head",
             18: "Face",
+            41: "Hair",
+            42: "FaceAccessory",
         })
 
         return d[asset_id]
