@@ -1,13 +1,19 @@
+from config import DEFAULT_PAGE_SIZE
 from models import Item, Codes
+from tortoise.functions import Count
+from core.tools import log_info
 
 __all__ = (
-    'get_item_by_roblox_id',
-    'create_item',
-    'delete_item',
-    'add_item_code',
-    'get_code_count',
-    'update_item_price'
+    "get_item_by_roblox_id",
+    "create_item",
+    "delete_item",
+    "add_item_code",
+    "get_code_count",
+    "update_item_price",
+    "search_item",
+    "get_code_from_item",
 )
+
 
 async def get_item_by_roblox_id(item_id: int):
     """
@@ -21,7 +27,14 @@ async def get_item_by_roblox_id(item_id: int):
     """
     return await Item.filter(item_id=item_id).first().values()
 
-async def create_item(item_id: int, item_name: str, item_description: str, item_price: int, item_category: str):
+
+async def create_item(
+    item_id: int,
+    item_name: str,
+    item_description: str,
+    item_price: int,
+    item_category: str,
+):
     """
     Function that creates an item to the database.
 
@@ -34,8 +47,15 @@ async def create_item(item_id: int, item_name: str, item_description: str, item_
     Returns:
         None
     """
-    await Item.create(item_id=item_id, item_name=item_name, item_description=item_description, item_price=item_price, item_category=item_category)
+    await Item.create(
+        item_id=item_id,
+        item_name=item_name,
+        item_description=item_description,
+        item_price=item_price,
+        item_category=item_category,
+    )
     return
+
 
 async def delete_item(item_id: int):
     """
@@ -49,6 +69,7 @@ async def delete_item(item_id: int):
     """
     await Item.filter(item_id=item_id).delete()
     return
+
 
 async def add_item_code(item_id: int, codes: list[str]):
     """
@@ -68,6 +89,7 @@ async def add_item_code(item_id: int, codes: list[str]):
         await Codes.bulk_create(code_objects)
     return
 
+
 async def get_code_count(item_id: int) -> int:
     """
     Function that counts the number of active codes in a specific item.
@@ -80,7 +102,8 @@ async def get_code_count(item_id: int) -> int:
     """
     return await Codes.filter(item_id=item_id).count()
 
-async def update_item_price(item_id: int, new_price: int):
+
+async def update_item_price(item_id: int, new_price: int) -> None:
     """
     Function that updates the price of an item.
 
@@ -92,4 +115,69 @@ async def update_item_price(item_id: int, new_price: int):
         None
     """
     await Item.filter(item_id=item_id).update(item_price=new_price)
-    return
+
+async def search_item(
+    item_name: str = None,
+    item_price: int = None,
+    item_category: str = None,
+    pageIdx: int = 0,
+) -> tuple[list[dict], bool]:
+    """
+    Function that searches for an item by its name, price or category.
+
+    Args:
+        item_name (str): The name of the item.
+        item_price (int): The price of the item.
+        item_category (str): The category of the item.
+        pageIdx (int): The page index.
+
+    Returns:
+        dict: The item.
+    """
+    offset = pageIdx * DEFAULT_PAGE_SIZE
+    
+    filters = {}
+    
+    if item_name is not None:
+        filters['item_name'] = item_name
+    if item_price is not None:
+        filters['item_price__lte'] = item_price
+    if item_category is not None:
+        filters['item_category'] = item_category
+        
+    item_list = (
+        await Item.filter(**filters)
+        .annotate(code_count=Count("codes"))
+        .filter(code_count__gt=0)
+        .offset(offset)
+        .limit(DEFAULT_PAGE_SIZE + 1)
+        .values("item_id", "item_name", "item_description", "item_price", "item_category", "code_count")
+    )
+    
+    has_more = False
+    
+    if len(item_list) > DEFAULT_PAGE_SIZE:
+        has_more = True
+        item_list = item_list[:-1]
+        
+    log_info(f"item_list: {item_list}")
+        
+    return item_list, has_more
+
+async def get_code_from_item(item_id: int) -> str:
+    """
+    Function that retrieves a code from an item.
+
+    Args:
+        item_id (int): The ID of the item.
+
+    Returns:
+        str: The code.
+    """
+    code_record = await Codes.filter(item_id=item_id).first().values()
+    
+    if code_record:
+        code = code_record['code']
+        await Codes.filter(item_id=item_id).delete()
+        return code
+    return None
