@@ -1,10 +1,7 @@
 from models.guild import Guilds
 
-__all__ = (
-    'get_guild',
-    'create_guild',
-    'update_guild'
-)
+__all__ = ("get_guild", "create_guild", "update_guild")
+
 
 async def get_guild(guild_id: int):
     """
@@ -18,6 +15,7 @@ async def get_guild(guild_id: int):
     """
     return await Guilds.filter(id=guild_id).first()
 
+
 async def create_guild(guild_id: int):
     """
     Create a guild in the database.
@@ -29,6 +27,7 @@ async def create_guild(guild_id: int):
         bool: Whether the guild was created.
     """
     await Guilds.create(id=guild_id)
+
 
 async def update_guild(guild_id: int, **kwargs):
     """

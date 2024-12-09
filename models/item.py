@@ -1,7 +1,8 @@
 from tortoise.models import Model
 from tortoise import fields
 
-__all__ = ['Item']
+__all__ = ["Item"]
+
 
 class Item(Model):
     item_id = fields.BigIntField(pk=True)

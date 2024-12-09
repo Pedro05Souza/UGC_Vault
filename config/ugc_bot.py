@@ -8,13 +8,15 @@ from config import BOT_PREFIX
 from dotenv import load_dotenv
 import os
 
-__all__ = ['UgcBot']
+__all__ = ["UgcBot"]
+
 
 class UgcBot(Bot):
-    
-    def __init__(self):
-        super().__init__(command_prefix=self.setup_prefix(), intents=self.setup_intents())
 
+    def __init__(self):
+        super().__init__(
+            command_prefix=self.setup_prefix(), intents=self.setup_intents()
+        )
 
     def setup_intents(self) -> Intents:
         """
@@ -39,14 +41,14 @@ class UgcBot(Bot):
             str: The prefix that the bot will use
         """
         return BOT_PREFIX
-    
+
     async def setup_hook(self) -> None:
         """
         Load the cogs when the bot is ready.
         """
         log_info(f"Logged in as {self.user.name} ({self.user.id})")
         await self.load_cogs(self)
-    
+
     async def load_cogs(self, bot: Bot) -> None:
         """
         This function loads the cogs for the bot.
@@ -54,15 +56,20 @@ class UgcBot(Bot):
         Args:
             bot (Bot): The bot object.
         """
-        cogs_dir = Path('./core/cogs')
-        for filepath in cogs_dir.rglob('*.py'):
+        cogs_dir = Path("./core/cogs")
+        for filepath in cogs_dir.rglob("*.py"):
 
-            if filepath.stem == '__init__':
+            if filepath.stem == "__init__":
                 continue
 
-            module_path = filepath.relative_to(cogs_dir).with_suffix('').as_posix().replace('/', '.')
-            await bot.load_extension(f'core.cogs.{module_path}')
-            log_info(f'Loaded cog: {module_path}')
+            module_path = (
+                filepath.relative_to(cogs_dir)
+                .with_suffix("")
+                .as_posix()
+                .replace("/", ".")
+            )
+            await bot.load_extension(f"core.cogs.{module_path}")
+            log_info(f"Loaded cog: {module_path}")
 
     def setup_token(self) -> str:
         """
@@ -72,8 +79,8 @@ class UgcBot(Bot):
             str: The bot token.
         """
         load_dotenv()
-        return os.getenv('DISCORD_TOKEN')
-    
+        return os.getenv("DISCORD_TOKEN")
+
     def run(self) -> None:
         """
         This function runs the bot.

@@ -3,14 +3,15 @@ from typing import Optional
 from datetime import datetime
 
 __all__ = (
-    'get_user',
-    'create_user',
-    'update_user',
-    'get_user_balance',
-    'get_command_timestamp',
-    'create_command_timestamp',
-    'update_command_timestamp'
+    "get_user",
+    "create_user",
+    "update_user",
+    "get_user_balance",
+    "get_command_timestamp",
+    "create_command_timestamp",
+    "update_command_timestamp",
 )
+
 
 async def get_user(id: int) -> Optional[User]:
     """
@@ -24,6 +25,7 @@ async def get_user(id: int) -> Optional[User]:
     """
     return await User.filter(id=id).first()
 
+
 async def create_user(id: int) -> User:
     """
     Create a user in the database.
@@ -35,6 +37,7 @@ async def create_user(id: int) -> User:
         bool: Whether the user was created.
     """
     await User.create(id=id)
+
 
 async def update_user(id: int, **kwargs) -> bool:
     """
@@ -49,6 +52,7 @@ async def update_user(id: int, **kwargs) -> bool:
     """
     return await User.filter(id=id).update(**kwargs)
 
+
 async def get_user_balance(id: int) -> Optional[int]:
     """
     Get the balance of a user.
@@ -62,6 +66,7 @@ async def get_user_balance(id: int) -> Optional[int]:
     user = await get_user(id)
     return user.balance if user else None
 
+
 async def get_command_timestamp(user_id: int, command_name: str) -> None:
     """
     Gets the timestamp of a command.
@@ -73,12 +78,15 @@ async def get_command_timestamp(user_id: int, command_name: str) -> None:
     Returns:
         datetime: The timestamp.
     """
-    querySet = await CommandsTimestamp.filter(user_id=user_id, command_name=command_name).first()
+    querySet = await CommandsTimestamp.filter(
+        user_id=user_id, command_name=command_name
+    ).first()
 
-    if not hasattr(querySet, 'timestamp'):
+    if not hasattr(querySet, "timestamp"):
         return None
-    
+
     return querySet.timestamp
+
 
 async def create_command_timestamp(user_id: int, command_name: str) -> None:
     """
@@ -94,6 +102,7 @@ async def create_command_timestamp(user_id: int, command_name: str) -> None:
     user = await get_user(user_id)
     await CommandsTimestamp.create(user_id=user, command_name=command_name)
 
+
 async def update_command_timestamp(user_id: int, command_name: str) -> bool:
     """
     Updates a command timestamp.
@@ -105,6 +114,8 @@ async def update_command_timestamp(user_id: int, command_name: str) -> bool:
     Returns:
         bool: Whether the command timestamp was updated.
     """
-    if command_name not in {'booster', 'candydrop', 'candy', 'candydrop', 'candyhunt'}:
+    if command_name not in {"booster", "candydrop", "candy", "candydrop", "candyhunt"}:
         raise ValueError(f"Command name '{command_name}' is not valid.")
-    return await CommandsTimestamp.filter(user_id=user_id, command_name=command_name).update(timestamp=datetime.now())
+    return await CommandsTimestamp.filter(
+        user_id=user_id, command_name=command_name
+    ).update(timestamp=datetime.now())
