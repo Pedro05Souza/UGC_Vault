@@ -173,17 +173,21 @@ async def confirmation_popup(
     confirm_button = await button_builder(
         label="Confirm", style=ButtonStyle.green, custom_id="confirm"
     )
+    
     view = await view_button_builder(cancel_button, confirm_button)
+    
+    is_interaction = isinstance(ctx, Interaction)
 
-    if isinstance(ctx, Interaction):
+    if is_interaction:
         if not ctx.response.is_done():
-            await ctx.response.send_message(embed=embed, ephemeral=ephemeral)
-        await ctx.followup.send(embed=embed, ephemeral=ephemeral, view=view)
+            await ctx.response.send_message(embed=embed, ephemeral=ephemeral, view=view)
+        else:
+            await ctx.followup.send(embed=embed, ephemeral=ephemeral, view=view)
     else:
-        await ctx.send(embed=embed, view=view, ephemeral=ephemeral)
+        await ctx.send(embed=embed, view=view)
 
-    client = ctx.client if isinstance(ctx, Interaction) else ctx.bot
-    author = ctx.user if isinstance(ctx, Interaction) else ctx.author
+    client = ctx.client if is_interaction else ctx.bot # Interaction and Context have different names for the bot. 
+    author = ctx.user if is_interaction else ctx.author # Interaction and Context have different names for the author.
     
     try:
         interaction = await client.wait_for(
