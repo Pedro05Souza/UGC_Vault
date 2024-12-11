@@ -1,7 +1,10 @@
 from config import DEFAULT_PAGE_SIZE
 from models import Item, Codes
 from tortoise.functions import Count
+from asyncio import Lock
 from core.tools import log_info
+
+lock = Lock()
 
 __all__ = (
     "get_item_by_roblox_id",
@@ -159,8 +162,7 @@ async def search_item(
     if len(item_list) > DEFAULT_PAGE_SIZE:
         has_more = True
         item_list = item_list[:-1]
-        
-    log_info(f"item_list: {item_list}")
+
         
     return item_list, has_more
 
@@ -174,10 +176,11 @@ async def get_code_from_item(item_id: int) -> str:
     Returns:
         str: The code.
     """
-    code_record = await Codes.filter(item_id=item_id).first().values()
-    
-    if code_record:
-        code = code_record['code']
-        await Codes.filter(item_id=item_id).delete()
-        return code
-    return None
+    async with lock:
+        code_record = await Codes.filter(item_id=item_id).first().values()
+        
+        if code_record:
+            code = code_record['code']
+            await Codes.filter(item_id=item_id, code=code).delete()
+            return code
+        return None
