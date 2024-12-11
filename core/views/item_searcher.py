@@ -88,18 +88,19 @@ class ItemList(View):
                 all_codes.append(codes)
                 
             if any([not codes for codes in all_codes]):
-                await send_bot_embed(
+                failure_error_message = "❌ Oops! Someone else bought the items before you did. Don't worry, your money has been refunded and you can buy the items again."
+                
+                return await send_bot_embed(
                     interaction,
                     description=failure_error_message,
                     ephemeral=True,
                 )
-                raise Exception("An error occurred while trying to retrieve the codes")
                 
             await send_bot_embed(
                 interaction,
                 description=f"✅ You have successfully purchased the following items:\n\n".join([f"Item: **{item['item_name']}**\nCode: {code}" for item, code in zip(chosen_items, all_codes)]),
                 is_dm=True,
-                failure_error_message="❌ Oops! Something went wrong and i couldn't send you the codes. Don't worry, your money has been refunded and you can buy the items again.",
+                dm_failure_error_message=failure_error_message,
             )
             
             
