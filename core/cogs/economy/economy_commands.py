@@ -4,7 +4,7 @@ This module contains the economy commands for the bot.
 
 from math import ceil
 from discord.ext.commands import Cog, Context, hybrid_command
-from discord import Interaction, app_commands
+from discord import Interaction, app_commands, Member
 from core.tools import (
     send_bot_embed,
     economy_handler,
@@ -20,6 +20,7 @@ from controllers import (
     update_command_timestamp,
     update_user,
     search_item,
+    get_user
 )
 from random import randint
 from config import DEFAULT_CLAIM_COOLDOWN
@@ -34,7 +35,7 @@ class EconomyCommands(Cog):
 
     @hybrid_command(name="balance", aliases=["bal"], description="Check your balance.")
     @economy_handler()
-    async def balance(self, ctx: Context) -> None:
+    async def balance(self, ctx: Context, user: Member = None) -> None:
         """
         Allows users to check their balance.
 
@@ -44,13 +45,20 @@ class EconomyCommands(Cog):
         Returns:
             None
         """
-        User = ctx.user_data
+        discord_user = ctx.author if not user else user
+        
+        internal_user = ctx.user_data if not user else await get_user(user.id)
+        
+        if user and not internal_user:
+            return await send_bot_embed(
+                ctx, description="The user you are trying to check the balance for does not have an account yet."
+            )
         
         await send_bot_embed(
             ctx,
-            thumbnail=ctx.author.display_avatar,
-            title=f"{ctx.author.display_name}'s candies",
-            description=f"{await retrieve_application_emoji('candy', 1295095109645373474, True)} Wallet: **{User.balance}**",
+            thumbnail=discord_user.display_avatar,
+            title=f"{discord_user.display_name}'s candies",
+            description=f"{await retrieve_application_emoji('candy', 1295095109645373474, True)} Wallet: **{internal_user.balance}**",
         )
 
     @hybrid_command(name="booster", description="Claim your daily booster reward.")
@@ -117,7 +125,7 @@ class EconomyCommands(Cog):
         command_name: str,
         description: str,
         points_rewarded: int,
-    ):
+    ) -> None:
         """
         Generic timestamp function for the economy commands.
 
@@ -178,7 +186,7 @@ class EconomyCommands(Cog):
         item_name: str = None,
         item_price: int = None,
         item_category: str = None,
-    ):
+    ) -> None:
         """
         Allows users to search for items in the shop.
 

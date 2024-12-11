@@ -79,7 +79,7 @@ class DeveloperCommands(Cog):
     )
     @economy_handler(user_data=True)
     @admin_only()
-    async def donate(self, ctx: Context, user: Member, amount: int):
+    async def donate(self, ctx: Context, user: Member, amount: int) -> None:
         author_data = ctx.user_data
         user_data = await get_user(user.id)
         paw_emoji = await retrieve_application_emoji("paw", 1295095109645373474)
@@ -222,6 +222,11 @@ class DeveloperCommands(Cog):
         if await get_item_by_roblox_id(item_id):
             return await send_bot_embed(
                 ctx, description=":no_entry_sign: This item is already registered."
+            )
+            
+        if item_price <= 0:
+            return await send_bot_embed(
+                ctx, description=":no_entry_sign: The price of the item cannot be less than or equal to 0."
             )
 
         item_info = await get_item_by_id(item_id)
