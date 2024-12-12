@@ -17,7 +17,7 @@ from core.routes import get_item_by_id, get_item_image_by_id
 from collections import defaultdict
 from discord.ui import Button
 from core.views import AddCodes, ChangePrice
-from controllers import (
+from repositories import (
     get_user,
     create_user,
     update_user,

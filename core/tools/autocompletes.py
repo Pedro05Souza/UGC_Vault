@@ -1,5 +1,5 @@
 from discord import Interaction, app_commands
-from controllers import get_all_items_with_codes
+from repositories import get_all_items_with_codes
 
 __all__ = ["color_autocomplete", "coinflip_autocomplete", "ugc_item_auto_complete"]
 

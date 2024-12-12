@@ -15,7 +15,7 @@ from core.tools import (
     embed_builder,
 )
 from models import User
-from controllers import (
+from repositories import (
     get_command_timestamp,
     create_command_timestamp,
     update_command_timestamp,

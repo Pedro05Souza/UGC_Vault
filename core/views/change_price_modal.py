@@ -1,7 +1,7 @@
 from discord.ui import Modal, TextInput
 from discord import Interaction, TextStyle
 from core.tools import send_bot_embed
-from controllers import update_item_price
+from repositories import update_item_price
 
 
 class ChangePrice(Modal, title="Change Item Price"):

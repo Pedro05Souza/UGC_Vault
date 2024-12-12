@@ -8,7 +8,7 @@ from core.tools import (
 )
 from models import User
 from random import choices, randint
-from controllers import update_user
+from repositories import update_user
 from math import ceil
 from collections import Counter
 from typing import Union

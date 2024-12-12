@@ -6,7 +6,7 @@ from config import CAN_LOG, ADMIN_IDS
 from core.tools.lib import send_bot_embed, retrieve_application_emoji
 from discord.ext.commands import check
 from contextlib import suppress
-from controllers import get_user, create_user, get_guild, create_guild
+from repositories import get_user, create_user, get_guild, create_guild
 
 __all__ = (
     "economy_handler",

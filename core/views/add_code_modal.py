@@ -1,7 +1,7 @@
 from discord.ui import Modal, TextInput
 from discord import Interaction, TextStyle
 from core.tools import send_bot_embed
-from controllers import add_item_code
+from repositories import add_item_code
 
 
 class AddCodes(Modal, title="Add Codes"):
