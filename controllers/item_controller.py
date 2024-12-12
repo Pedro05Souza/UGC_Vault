@@ -1,8 +1,5 @@
-from config import DEFAULT_PAGE_SIZE
 from models import Item, Codes
-from tortoise.functions import Count
 from asyncio import Lock
-from core.tools import log_info
 
 lock = Lock()
 
@@ -13,10 +10,9 @@ __all__ = (
     "add_item_code",
     "get_code_count",
     "update_item_price",
-    "search_item",
     "get_code_from_item",
+    'get_all_items_with_codes'
 )
-
 
 async def get_item_by_roblox_id(item_id: int):
     """
@@ -119,53 +115,6 @@ async def update_item_price(item_id: int, new_price: int) -> None:
     """
     await Item.filter(item_id=item_id).update(item_price=new_price)
 
-async def search_item(
-    item_name: str = None,
-    item_price: int = None,
-    item_category: str = None,
-    pageIdx: int = 0,
-) -> tuple[list[dict], bool]:
-    """
-    Function that searches for an item by its name, price or category.
-
-    Args:
-        item_name (str): The name of the item.
-        item_price (int): The price of the item.
-        item_category (str): The category of the item.
-        pageIdx (int): The page index.
-
-    Returns:
-        dict: The item.
-    """
-    offset = pageIdx * DEFAULT_PAGE_SIZE
-    
-    filters = {}
-    
-    if item_name is not None:
-        filters['item_name'] = item_name
-    if item_price is not None:
-        filters['item_price__lte'] = item_price
-    if item_category is not None:
-        filters['item_category'] = item_category
-        
-    item_list = (
-        await Item.filter(**filters)
-        .annotate(code_count=Count("codes"))
-        .filter(code_count__gt=0)
-        .offset(offset)
-        .limit(DEFAULT_PAGE_SIZE + 1)
-        .values("item_id", "item_name", "item_description", "item_price", "item_category", "code_count")
-    )
-    
-    has_more = False
-    
-    if len(item_list) > DEFAULT_PAGE_SIZE:
-        has_more = True
-        item_list = item_list[:-1]
-
-        
-    return item_list, has_more
-
 async def get_code_from_item(item_id: int) -> str:
     """
     Function that retrieves a code from an item.
@@ -183,4 +132,15 @@ async def get_code_from_item(item_id: int) -> str:
             code = code_record['code']
             await Codes.filter(item_id=item_id, code=code).delete()
             return code
+        await Item.filter(item_id=item_id).delete()
         return None
+    
+async def get_all_items_with_codes():
+    """
+    Function that retrieves all items with codes.
+
+    Returns:
+        list: The items with codes.
+    """
+    return await Item.filter(codes__isnull=False).distinct().values("item_id", "item_name", "item_price", "item_category")
+

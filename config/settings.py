@@ -17,7 +17,3 @@ ADMIN_IDS = {
 MAX_SLOTS = 3  # The maximum amount of slots that can be played at once
 MAX_COINFLIP = 4000  # The maximum amount that can be bet on a coinflip
 DEFAULT_CLAIM_COOLDOWN = 1800  # The default cooldown for claiming rewards (in seconds)
-
-# Database settings
-
-DEFAULT_PAGE_SIZE = 10  # The default page size for pagination

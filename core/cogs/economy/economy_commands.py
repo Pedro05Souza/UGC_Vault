@@ -5,22 +5,24 @@ This module contains the economy commands for the bot.
 from math import ceil
 from discord.ext.commands import Cog, Context, hybrid_command
 from discord import Interaction, app_commands, Member
+from tortoise.transactions import in_transaction
 from core.tools import (
     send_bot_embed,
     economy_handler,
     retrieve_application_emoji,
+    ugc_item_auto_complete,
+    confirmation_popup,
     embed_builder,
-    category_autocomplete,
 )
 from models import User
-from ...views import ItemList
 from controllers import (
     get_command_timestamp,
     create_command_timestamp,
     update_command_timestamp,
     update_user,
-    search_item,
-    get_user
+    get_user,
+    get_code_from_item,
+    get_item_by_roblox_id,
 )
 from random import randint
 from config import DEFAULT_CLAIM_COOLDOWN
@@ -46,14 +48,15 @@ class EconomyCommands(Cog):
             None
         """
         discord_user = ctx.author if not user else user
-        
+
         internal_user = ctx.user_data if not user else await get_user(user.id)
-        
+
         if user and not internal_user:
             return await send_bot_embed(
-                ctx, description="The user you are trying to check the balance for does not have an account yet."
+                ctx,
+                description="The user you are trying to check the balance for does not have an account yet.",
             )
-        
+
         await send_bot_embed(
             ctx,
             thumbnail=discord_user.display_avatar,
@@ -174,18 +177,11 @@ class EconomyCommands(Cog):
     @app_commands.command(
         name="searchitem", description="Search for an item in the shop."
     )
-    @app_commands.describe(
-        item_name="OPTIONAL",
-        item_price="OPTIONAL",
-        item_category="OPTIONAL",
-    )
-    @app_commands.autocomplete(item_category=category_autocomplete)
+    @app_commands.autocomplete(item=ugc_item_auto_complete)
     async def search_ugc_item(
         self,
         interaction: Interaction,
-        item_name: str = None,
-        item_price: int = None,
-        item_category: str = None,
+        item: str,
     ) -> None:
         """
         Allows users to search for items in the shop.
@@ -198,34 +194,72 @@ class EconomyCommands(Cog):
         Returns:
             None
         """
-        if all([not item_name, not item_price, not item_category]):
+        item_id = int(item)
+
+        item = await get_item_by_roblox_id(item_id)
+
+        if not item:
             return await send_bot_embed(
                 interaction,
-                description="Please provide a name, price, and category to search for an item.",
+                description="❌ The item you are looking for does not exist.",
+                ephemeral=True,
             )
 
-        list_of_items, has_more = await search_item(
-            item_name, item_price, item_category
+        user = await get_user(interaction.user.id)
+
+        if not user:
+            return await send_bot_embed(
+                interaction,
+                description="❌ You do not have an account yet.",
+                ephemeral=True,
+            )
+
+        confirmation_embed = await embed_builder(
+            title=f"Are you sure you want to purchase the following item?",
+            description=f"**{item['item_name']}**\n\n**Description:** {item['item_description']}\n\n**Price:** {item['item_price']} candies",
         )
+        
+        result = await confirmation_popup(interaction, confirmation_embed, is_dm=True)
+        
+        if not result:
+            return
+        
+        await self.dispatch_item_codes(interaction, item, user)
 
-        if not list_of_items:
-            return await send_bot_embed(interaction, description="No items found.")
+    async def dispatch_item_codes(
+        self, interaction: Interaction, chosen_item, user: User
+    ) -> None:
+        """
+        Dispatch the item codes to the user who purchased the items
 
-        embed = await embed_builder(
-            title="🔎 Search Results",
-            description="Here are the items that match your search criteria:\n"
-            + "\n".join(
-                [
-                    f"🍬 ** {index}. **Name: {item['item_name']}**\n💰 Price: {item['item_price']} candies \n🔗 Roblox Link: https://www.roblox.com/catalog/{item['item_id']}\n 📜 Available Codes: {item['code_count']}"
-                    for index, item in enumerate(list_of_items, start=1)
-                ]
-            ),
-        )
+        Args:
+            chosen_items (list): The items that the user has chosen to purchase
+        """
+        async with in_transaction():
+            failure_error_message = "❌ Oops! Something went wrong and i couldn't send you the codes. Don't worry, your money has been refunded and you can buy the items again."
+            await update_user(
+                user.id, balance=user.balance - chosen_item["item_price"]
+            )
 
-        view = ItemList(interaction.user, list_of_items, has_more)
+            item_code = await get_code_from_item(chosen_item["item_id"])
 
-        await interaction.response.send_message(embed=embed, view=view)
+            if not item_code:
+                failure_error_message = "❌ Oops! Someone else bought the items before you did. Don't worry, your money has been refunded and you can buy the items again."
 
+                return await send_bot_embed(
+                    interaction,
+                    description=failure_error_message,
+                    ephemeral=True,
+                )
+
+            await send_bot_embed(
+                interaction,
+                title="✅ Purchase successful",
+                description=f"You have successfully purchased the following item:\n\n"
+                + f"**{chosen_item['item_name']}**\n\n**Description:** {chosen_item['item_description']}\n\n**Price:** {chosen_item['item_price']} candies\n\n**Code:** {item_code}",
+                is_dm=True,
+                dm_failure_error_message=failure_error_message,
+            )
 
 async def setup(bot):
     await bot.add_cog(EconomyCommands(bot))

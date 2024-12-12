@@ -1,6 +1,7 @@
 from discord import Interaction, app_commands
+from controllers import get_all_items_with_codes
 
-__all__ = ["color_autocomplete", "coinflip_autocomplete", "category_autocomplete"]
+__all__ = ["color_autocomplete", "coinflip_autocomplete", "ugc_item_auto_complete"]
 
 
 async def color_autocomplete(
@@ -13,7 +14,6 @@ async def color_autocomplete(
         if current_choice.lower() in color.lower()
     ]
 
-
 async def coinflip_autocomplete(
     interaction: Interaction, current_choice: str
 ) -> list[app_commands.Choice]:
@@ -24,12 +24,12 @@ async def coinflip_autocomplete(
         if current_choice.lower() in side.lower()
     ]
     
-async def category_autocomplete(
+async def ugc_item_auto_complete(
     interaction: Interaction, current_choice: str
 ) -> list[app_commands.Choice]:
-    categories = ["Hair", "Head", "Face", "Hat", "Other"]
+    items = await get_all_items_with_codes()
     return [
-        app_commands.Choice(name=category, value=category)
-        for category in categories
-        if current_choice.lower() in category.lower()
+        app_commands.Choice(name=item["item_name"], value=str(item["item_id"]))
+        for item in items
+        if current_choice.lower() in item["item_name"].lower()
     ]
