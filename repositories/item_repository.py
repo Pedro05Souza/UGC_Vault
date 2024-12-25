@@ -11,10 +11,10 @@ __all__ = (
     "get_code_count",
     "update_item_price",
     "get_code_from_item",
-    'get_all_items_with_codes'
+    'get_all_items_with_codes_and_quantity'
 )
 
-async def get_item_by_roblox_id(item_id: int):
+async def get_item_by_roblox_id(item_id: int) -> dict:
     """
     Function that retrieves an item by its roblox ID.
 
@@ -33,7 +33,7 @@ async def create_item(
     item_description: str,
     item_price: int,
     item_category: str,
-):
+) -> None:
     """
     Function that creates an item to the database.
 
@@ -56,7 +56,7 @@ async def create_item(
     return
 
 
-async def delete_item(item_id: int):
+async def delete_item(item_id: int) -> None:
     """
     Function that deletes an item from the database.
 
@@ -70,7 +70,7 @@ async def delete_item(item_id: int):
     return
 
 
-async def add_item_code(item_id: int, codes: list[str]):
+async def add_item_code(item_id: int, codes: list[str]) -> None:
     """
     Function that adds a code to an item.
 
@@ -100,7 +100,6 @@ async def get_code_count(item_id: int) -> int:
         int: The number of active codes.
     """
     return await Codes.filter(item_id=item_id).count()
-
 
 async def update_item_price(item_id: int, new_price: int) -> None:
     """
@@ -135,12 +134,11 @@ async def get_code_from_item(item_id: int) -> str:
         await Item.filter(item_id=item_id).delete()
         return None
     
-async def get_all_items_with_codes():
+async def get_all_items_with_codes_and_quantity() -> list[Item]:
     """
     Function that retrieves all items with codes.
 
     Returns:
         list: The items with codes.
     """
-    return await Item.filter(codes__isnull=False).distinct().values("item_id", "item_name", "item_price", "item_category")
-
+    return await Item.filter(codes__isnull=False).distinct().values("item_id", "item_name", "item_price", "item_category", "codes__code")
