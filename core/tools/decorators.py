@@ -26,7 +26,6 @@ def economy_handler(user_data=True, guild_data=True, booster_command=False):
     Returns:
         Decorator: The decorator.
     """
-
     async def predicate(ctx):
 
         if guild_data:
@@ -57,8 +56,7 @@ def economy_handler(user_data=True, guild_data=True, booster_command=False):
 
     with suppress(Exception):
         return check(predicate)
-
-
+    
 def check_logging():
     def wrapper(func):
         async def wrapped(*args, **kwargs):
@@ -68,7 +66,6 @@ def check_logging():
         return wrapped
 
     return wrapper
-
 
 def admin_only():
     """
