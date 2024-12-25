@@ -32,6 +32,7 @@ __all__ = ("EconomyCommands",)
 
 
 class EconomyCommands(Cog):
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -214,16 +215,22 @@ class EconomyCommands(Cog):
                 ephemeral=True,
             )
 
+        await send_bot_embed(
+            interaction,
+            description="✅ Check your DMs to confirm the purchase.",
+            ephemeral=True,
+        )
+
         confirmation_embed = await embed_builder(
             title=f"Are you sure you want to purchase the following item?",
             description=f"**{item['item_name']}**\n\n**Description:** {item['item_description']}\n\n**Price:** {item['item_price']} candies",
         )
-        
+
         result = await confirmation_popup(interaction, confirmation_embed, is_dm=True)
-        
+
         if not result:
             return
-        
+
         await self.dispatch_item_codes(interaction, item, user)
 
     async def dispatch_item_codes(
@@ -236,27 +243,28 @@ class EconomyCommands(Cog):
             chosen_items (list): The items that the user has chosen to purchase
         """
         async with in_transaction():
-            failure_error_message = "❌ Oops! Something went wrong and i couldn't send you the codes. Don't worry, your money has been refunded and you can buy the items again."
-            await update_user(
-                user.id, balance=user.balance - chosen_item["item_price"]
-            )
+            failure_error_message = "⚠️ Something went wrong! We couldn’t send you the codes, possibly because your direct messages are disabled or you blocked me. Don’t worry, your payment has been refunded, and you can try purchasing the items again."
+            await update_user(user.id, balance=user.balance - chosen_item["item_price"])
 
             item_code = await get_code_from_item(chosen_item["item_id"])
 
             if not item_code:
                 failure_error_message = "❌ Oops! Someone else bought the items before you did. Don't worry, your money has been refunded and you can buy the items again."
 
+                await update_user(
+                    user.id, balance=user.balance + chosen_item["item_price"]
+                )
+
                 return await send_bot_embed(
                     interaction,
                     description=failure_error_message,
                     ephemeral=True,
+                    is_dm=True,
                 )
-
             await send_bot_embed(
                 interaction,
                 title="✅ Purchase successful",
-                description=f"You have successfully purchased the following item:\n\n"
-                + f"**{chosen_item['item_name']}**\n\n**Description:** {chosen_item['item_description']}\n\n**Price:** {chosen_item['item_price']} candies\n\n**Code:** {item_code}",
+                description=f"Here is the code you purchased: \n```{item_code}```",
                 is_dm=True,
                 dm_failure_error_message=failure_error_message,
             )
