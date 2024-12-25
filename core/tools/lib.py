@@ -2,7 +2,7 @@
 This module contains the tools that are used in the bot.
 """
 
-from discord import Embed, File, Interaction, Member, ButtonStyle
+from discord import Embed, File, Interaction, ButtonStyle
 from discord.ext.commands import Context
 from discord.ui import Button, View
 
