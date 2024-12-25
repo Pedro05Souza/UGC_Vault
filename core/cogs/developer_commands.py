@@ -1,7 +1,6 @@
 """
 This module contains the developer commands for the bot.
 """
-
 from discord.ext.commands import Cog, Context, command
 from discord import Member, ButtonStyle, Interaction
 from core.tools import (
@@ -37,7 +36,7 @@ __all__ = ("DeveloperCommands",)
 
 class DeveloperCommands(Cog):
 
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     @command(name="givepoints", aliases=["gp"], description="Give points to a user.")
@@ -282,7 +281,14 @@ class DeveloperCommands(Cog):
             item_id, item_name, item_description, item_price, item_category
         )
 
-    async def parse_error_message(self, ctx: Context, item_info: dict):
+    async def parse_error_message(self, ctx: Context, item_info: dict) -> None:
+        """
+        Parses the error message.
+        
+        Args:
+            item_info (dict): The item information.
+        
+        """
         code = item_info["errors"][0]
         code = code["code"]
 
@@ -295,7 +301,7 @@ class DeveloperCommands(Cog):
         else:
             return await send_bot_embed(
                 ctx,
-                description=":no_entry_sign: An unknown error occurred while registering the item.",
+                description=":no_entry_sign: Something went wrong while registering the item.",
             )
 
     @command(name="displayitem", aliases=["display"], description="Display an item.")
@@ -479,7 +485,6 @@ class DeveloperCommands(Cog):
                 42: "FaceAccessory",
             }
         )
-
         return d[asset_id]
 
 
