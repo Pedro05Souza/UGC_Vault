@@ -1,7 +1,6 @@
 """
 This module contains functions for logging messages.
 """
-
 from core.tools.log_setup import bot_logger
 
 

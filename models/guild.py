@@ -3,7 +3,6 @@ from tortoise import fields
 
 __all__ = ["Guilds"]
 
-
 class Guilds(Model):
     id = fields.BigIntField(primary_key=True)
     allowed_channels = fields.JSONField(null=True)

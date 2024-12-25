@@ -1,7 +1,6 @@
 """
 This module sets up the logger for the bot.
 """
-
 from colorlog import ColoredFormatter
 import logging
 
@@ -34,6 +33,5 @@ def setup_logging() -> logging.Logger:
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     return logger
-
 
 bot_logger = setup_logging()
