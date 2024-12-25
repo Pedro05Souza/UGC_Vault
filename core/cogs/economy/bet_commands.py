@@ -4,7 +4,6 @@ from core.tools import (
     send_bot_embed,
     economy_handler,
     color_autocomplete,
-    coinflip_autocomplete,
 )
 from models import User
 from random import choices, randint
@@ -12,7 +11,7 @@ from repositories import update_user
 from math import ceil
 from collections import Counter
 from typing import Union
-from config import MAX_SLOTS, MAX_COINFLIP
+from config import MAX_SLOTS
 
 __all__ = ("BetCommands",)
 
@@ -114,44 +113,6 @@ class BetCommands(Cog):
 
         if await update_user(user.id, balance=user.balance):
             await send_bot_embed(ctx, description=description)
-
-    @hybrid_command(
-        name="coinflip", aliases=["cf"], description="Bet on a side in a coinflip."
-    )
-    @app_commands.autocomplete(side=coinflip_autocomplete)
-    @economy_handler()
-    async def coinflip(self, ctx: Context, bet_amount, side: str) -> None:
-        """
-        Coinflip command for the betting system.
-
-        Args:
-            bet_amount (int): The amount to bet.
-            side (str): The side to bet on.
-        """
-        User = ctx.user_data
-        bet_amount = await self.bet_validator(ctx, User, bet_amount)
-
-        if bet_amount == -1:
-            return
-
-        if bet_amount > MAX_COINFLIP:
-            return await send_bot_embed(
-                ctx,
-                description=f":no_entry_sign: The maximum bet amount is **{MAX_COINFLIP}**.",
-            )
-
-        coin_sides = ["heads", "tails"]
-        rng_side = choices(coin_sides)[0]
-
-        if side.lower() == rng_side:
-            User.balance += bet_amount
-            description = f"🎉 **{ctx.author.display_name}** has won **{bet_amount}**."
-        else:
-            User.balance -= bet_amount
-            description = f"😢 **{ctx.author.display_name}** has lost **{bet_amount}**. The side was **{rng_side}**."
-
-        await update_user(User.id, balance=User.balance)
-        await send_bot_embed(ctx, description=description)
 
     async def bet_validator(
         self, ctx: Context, User: User, bet_amount: Union[str, int]
