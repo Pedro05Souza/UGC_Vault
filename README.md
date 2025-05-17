@@ -8,10 +8,7 @@
 
 ## 🔧 Setting Up Project Dependencies
 
-Follow the steps below to set up the project and get it running in no time. 
-
-
-> **Note**: Without the proper enviroment variables configured, this project will **NOT** function as intended.
+Follow the steps below to set up the project and get it running.
 
 ### 1️⃣ Setting Up a Virtual Environment  
 
